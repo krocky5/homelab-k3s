@@ -1,0 +1,18 @@
+# kube configs
+.kube/
+kubeconfig
+*.kubeconfig
+
+# local secrets / overrides
+secret.yaml
+secret*.yaml
+*.env
+*.key
+*.pem
+
+# editors
+.vscode/
+.idea/
+
+# OS
+.DS_Store

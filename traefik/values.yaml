@@ -1,0 +1,37 @@
+
+additionalArguments:
+  # --- ACME / Let's Encrypt ---
+  - "--certificatesresolvers.cloudflare.acme.email=${ACME_EMAIL}"
+  - "--certificatesresolvers.cloudflare.acme.storage=/data/acme.json"
+  - "--certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare"
+  - "--certificatesresolvers.cloudflare.acme.dnschallenge.delaybeforecheck=10"
+
+  # --- EntryPoints ---
+  - "--entrypoints.web.address=:80"
+  - "--entrypoints.websecure.address=:443"
+
+  # --- HTTP -> HTTPS redirect ---
+  - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+  - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+
+env:
+  - name: CLOUDFLARE_API_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: cloudflare-api-token
+        key: CLOUDFLARE_API_TOKEN
+  - name: ACME_EMAIL
+    valueFrom:
+      secretKeyRef:
+        name: traefik-acme-email
+        key: ACME_EMAIL
+
+persistence:
+  enabled: true
+  name: data
+  accessMode: ReadWriteOnce
+  path: /data
+
+logs:
+  general:
+    level: INFO
