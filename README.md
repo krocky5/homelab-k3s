@@ -182,15 +182,9 @@ kubectl get svc -n monitoring
 
 ---
 
-## Future Considerations
+## Future Additions
 
 - Add Argo CD for GitOps automation.
 - CI/CD pipelines to validate manifests before applying.
 - Network policies and RBAC for security hardening.
 - Rotate secrets periodically.
-
----
-
-### ✅ Summary
-
-This repository is the **single source of truth** for k3s applications, Traefik ingress, and Cloudflare tunnels. The structure is simple, safe, and expandable for future apps. All sensitive data remains local to the cluster.
