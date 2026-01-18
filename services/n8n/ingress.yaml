@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: n8n
+  namespace: n8n
+  labels:
+    app: n8n
+spec:
+  ingressClassName: traefik  
+  rules:
+    - host: automationsv2.krockysphere.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: n8n
+                port:
+                  number: 5678
+  tls:
+    - hosts:
+        - automationsv2.krockysphere.com
+      secretName: n8n-tls  # optional if using Traefik + ACME/Cloudflare to auto-generate
