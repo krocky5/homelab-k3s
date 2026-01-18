@@ -1,0 +1,48 @@
+# services/n8n/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: n8n
+  namespace: n8n
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: n8n
+  template:
+    metadata:
+      labels:
+        app: n8n
+    spec:
+      containers:
+        - name: n8n
+          image: n8nio/n8n:latest
+          ports:
+            - containerPort: 5678
+          env:
+            - name: DB_TYPE
+              value: "postgresdb"
+            - name: DB_POSTGRESDB_HOST
+              value: "n8n-postgres.n8n.svc.cluster.local"
+            - name: DB_POSTGRESDB_PORT
+              value: "5432"
+            - name: DB_POSTGRESDB_DATABASE
+              value: "n8n"
+            - name: DB_POSTGRESDB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-postgres
+                  key: POSTGRES_USER
+            - name: DB_POSTGRESDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-postgres
+                  key: POSTGRES_PASSWORD
+            - name: N8N_HOST
+              value: "automationsv2.krockysphere.com"
+            - name: N8N_PORT
+              value: "5678"   # override the service port used by traefik
+            - name: N8N_PROTOCOL
+              value: "https"
+            - name: WEBHOOK_TUNNEL_URL
+              value: "https://automationsv2.krockysphere.com"
