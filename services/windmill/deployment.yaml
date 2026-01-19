@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: windmill
+  namespace: windmill
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: windmill
+  template:
+    metadata:
+      labels:
+        app: windmill
+    spec:
+      imagePullSecrets:
+        - name: windmill-regcred
+      containers:
+        - name: windmill
+          image: ghcr.io/windmill-labs/windmill:main
+          env:
+            # Required by Windmill
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: windmill-db-secret
+                  key: database_url
+            # Optional: password available if needed
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: windmill-db-secret
+                  key: password
+          ports:
+            - containerPort: 8000
