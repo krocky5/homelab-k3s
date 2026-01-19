@@ -14,7 +14,10 @@ spec:
       labels:
         app: n8n
     spec:
+      # Init container removed - N8N will create the event log automatically
+
       containers:
+        # Main N8N container
         - name: n8n
           image: n8nio/n8n:latest
           ports:
@@ -41,8 +44,36 @@ spec:
             - name: N8N_HOST
               value: "automationsv2.krockysphere.com"
             - name: N8N_PORT
-              value: "5678"   # override the service port used by traefik
+              value: "5678"
             - name: N8N_PROTOCOL
               value: "https"
             - name: WEBHOOK_TUNNEL_URL
               value: "https://automationsv2.krockysphere.com"
+            - name: N8N_LOG_LEVEL
+              value: "debug"
+          volumeMounts:
+            - name: n8n-data
+              mountPath: /home/node/.n8n
+
+        # Sidecar: n8n-tracer to export logs as OTel traces
+        - name: n8n-tracer
+          image: ghcr.io/ivov/n8n-tracer:latest
+          env:
+            - name: N8N_DEPLOYMENT_MODE
+              value: "regular"
+            - name: WATCH_FILE_PATH
+              value: "/shared/n8nEventLog.log"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://otel-collector.monitoring.svc.cluster.local:4318"
+            - name: STATE_FILE_PATH
+              value: "/tmp/n8n-tracer.state.json"
+            - name: DEBOUNCE_DURATION
+              value: "500ms"
+          volumeMounts:
+            - name: n8n-data
+              mountPath: /shared
+              readOnly: true
+
+      volumes:
+        - name: n8n-data
+          emptyDir: {}
