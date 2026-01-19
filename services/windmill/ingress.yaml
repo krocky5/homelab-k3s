@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: windmill
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    # Optional self-signed TLS for testing
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  rules:
+    - host: windmill.krockysphere.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: windmill
+                port:
+                  number: 80
+  tls:
+  - hosts:
+    - windmill.krockysphere.com
+    secretName: windmill-tls
+

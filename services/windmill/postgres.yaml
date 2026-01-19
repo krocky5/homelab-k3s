@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: windmill-db
+spec:
+  serviceName: "windmill-db"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: windmill-db
+  template:
+    metadata:
+      labels:
+        app: windmill-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        env:
+        - name: POSTGRES_DB
+          value: windmill
+        - name: POSTGRES_USER
+          value: windmill
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: windmill-db-secret
+              key: password
+        ports:
+        - containerPort: 5433
+        volumeMounts:
+        - name: pgdata
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: pgdata
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: local-path   # K3s default
+      resources:
+        requests:
+          storage: 10Gi
+
