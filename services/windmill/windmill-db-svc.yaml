@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: windmill-db
+  namespace: windmill
+spec:
+  selector:
+    app: windmill-db
+  ports:
+    - protocol: TCP
+      port: 5432        # the port Windmill expects
+      targetPort: 5432  # the port Postgres is listening on in the pod
+
