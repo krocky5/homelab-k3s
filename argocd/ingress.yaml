@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server
+  namespace: argocd
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    # Argo CD needs this for gRPC
+    traefik.ingress.kubernetes.io/router.middlewares: argocd-stripprefix@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: argocd.krockysphere.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: argocd-server
+            port:
+              number: 443
+  tls:
+  - hosts:
+    - argocd.krockysphere.com
+    secretName: argocd-tls
