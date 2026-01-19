@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: windmill
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/krocky5/homelab-k3s.git
+    targetRevision: HEAD
+    path: services/windmill
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: windmill
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+  # Ignore secret data (database credentials managed manually)
+  ignoreDifferences:
+  - group: ""
+    kind: Secret
+    jsonPointers:
+    - /data
