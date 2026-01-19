@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config      # Name referenced in deployment
+  namespace: monitoring
+data:
+  config.yaml: |                    # The key name - must match volumeMount
+    # Everything below this is the OTel Collector config
+    # Note the | means literal string block in YAML
+    
+    receivers:                      # What accepts traces
+      otlp:                         # OpenTelemetry Protocol
+        protocols:
+          grpc:                     # N8N can send via gRPC
+            endpoint: 0.0.0.0:4317
+          http:                     # N8N can send via HTTP
+            endpoint: 0.0.0.0:4318
+    
+    processors:                     # What processes traces
+      batch:                        # Batches traces for efficiency
+        timeout: 10s
+    
+    exporters:                      # Where to send traces
+      logging:                      # Print to console (for debugging)
+        loglevel: debug
+      
+      otlp:                         # Send to Jaeger
+        endpoint: jaeger.monitoring.svc.cluster.local:4317
+        tls:
+          insecure: true            # No TLS inside cluster
+    
+    service:                        # The pipeline definition
+      pipelines:
+        traces:
+          receivers: [otlp]         # Receive from OTLP
+          processors: [batch]       # Process with batch
+          exporters: [logging, otlp] # Export to logs AND Jaeger
