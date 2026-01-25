@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: authentik
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/yourusername/k3s  # CHANGE THIS to your repo
+    targetRevision: main  # or master, depending on your branch
+    path: services/authentik
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: authentik
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

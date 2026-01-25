@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: authentik
+  namespace: authentik
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"  # Adjust if you use different issuer
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: auth.krockysphere.com  # CHANGE THIS to your domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: authentik-server
+            port:
+              number: 9000
+  tls:
+  - hosts:
+    - auth.yourdomain.com  # CHANGE THIS to your domain
+    secretName: authentik-tls
