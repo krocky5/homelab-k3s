@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authentik-worker
+  namespace: authentik
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: authentik-worker
+  template:
+    metadata:
+      labels:
+        app: authentik-worker
+    spec:
+      containers:
+      - name: authentik
+        image: ghcr.io/goauthentik/server:2024.10.1  # Match server version
+        args: ["worker"]
+        env:
+        - name: AUTHENTIK_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: authentik-secret
+              key: AUTHENTIK_SECRET_KEY
+        - name: AUTHENTIK_POSTGRESQL__HOST
+          valueFrom:
+            secretKeyRef:
+              name: authentik-secret
+              key: AUTHENTIK_POSTGRESQL__HOST
+        - name: AUTHENTIK_POSTGRESQL__PORT
+          valueFrom:
+            secretKeyRef:
+              name: authentik-secret
+              key: AUTHENTIK_POSTGRESQL__PORT
+        - name: AUTHENTIK_POSTGRESQL__NAME
+          valueFrom:
+            secretKeyRef:
+              name: authentik-secret
+              key: AUTHENTIK_POSTGRESQL__NAME
+        - name: AUTHENTIK_POSTGRESQL__USER
+          valueFrom:
+            secretKeyRef:
+              name: authentik-secret
+              key: AUTHENTIK_POSTGRESQL__USER
+        - name: AUTHENTIK_POSTGRESQL__PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: authentik-secret
+              key: AUTHENTIK_POSTGRESQL__PASSWORD
+        - name: AUTHENTIK_REDIS__HOST
+          valueFrom:
+            secretKeyRef:
+              name: authentik-secret
+              key: AUTHENTIK_REDIS__HOST
+        - name: AUTHENTIK_ERROR_REPORTING__ENABLED
+          value: "false"
+        volumeMounts:
+        - name: media
+          mountPath: /media
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: media
+        persistentVolumeClaim:
+          claimName: authentik-media-pvc
