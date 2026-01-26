@@ -12,7 +12,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-  - host: home-v1.krockysphere.com  # CHANGE THIS - using v1 subdomain for testing
+  - host: home.krockysphere.com  # CHANGE THIS - using v1 subdomain for testing
     http:
       paths:
       - path: /
