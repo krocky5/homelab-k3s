@@ -17,17 +17,17 @@ spec:
       - name: homarr
         image: ghcr.io/homarr-labs/homarr:latest  # Use latest tag for v1.x
         ports:
-        - containerPort: 7575
+        - containerPort: 3000
           name: http
         env:
         - name: TZ
-          value: "America/New_York" # CHANGE THIS to your timezone
+          value: "America/New_York"  # CHANGE THIS to your timezone
         - name: SECRET_ENCRYPTION_KEY
           valueFrom:
             secretKeyRef:
               name: homarr-secrets
               key: secret-encryption-key
-              # Optional: Database configuration
+        # Optional: Database configuration
         # Homarr 1.0 uses SQLite by default, but you can configure PostgreSQL/MySQL
         # - name: DB_URL
         #   value: "postgresql://user:password@hostname:5432/homarr"
