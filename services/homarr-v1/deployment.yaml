@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homarr
+  namespace: homarr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: homarr
+  template:
+    metadata:
+      labels:
+        app: homarr
+    spec:
+      containers:
+      - name: homarr
+        image: ghcr.io/homarr-labs/homarr:1.0.0  # Updated image repository for 1.0
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        - name: TZ
+          value: "America/New_York"  # CHANGE THIS to your timezone
+        # Optional: Database configuration
+        # Homarr 1.0 uses SQLite by default, but you can configure PostgreSQL/MySQL
+        # - name: DB_URL
+        #   value: "postgresql://user:password@hostname:5432/homarr"
+        # Optional: Authentication configuration
+        # - name: AUTH_SESSION_EXPIRY_TIME
+        #   value: "7d"
+        # - name: AUTH_SECRET
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: homarr-secrets
+        #       key: auth-secret
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: assets
+          mountPath: /app/public/imgs
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: homarr-data-pvc
+      - name: assets
+        persistentVolumeClaim:
+          claimName: homarr-assets-pvc
