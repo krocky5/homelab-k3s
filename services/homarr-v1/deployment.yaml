@@ -15,9 +15,9 @@ spec:
     spec:
       containers:
       - name: homarr
-        image: ghcr.io/homarr-labs/homarr:1.0.0  # Updated image repository for 1.0
+        image: ghcr.io/homarr-labs/homarr:latest  # Use latest tag for v1.x
         ports:
-        - containerPort: 3000
+        - containerPort: 7575
           name: http
         env:
         - name: TZ
@@ -36,7 +36,7 @@ spec:
         #       key: auth-secret
         volumeMounts:
         - name: data
-          mountPath: /data
+          mountPath: /appdata
         - name: assets
           mountPath: /app/public/imgs
         resources:

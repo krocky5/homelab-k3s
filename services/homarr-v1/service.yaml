@@ -2,11 +2,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: homarr
-  namespace: homarr
+  namespace: homarr-v1
 spec:
   selector:
     app: homarr
   ports:
-  - port: 3000
-    targetPort: 3000
+  - port: 7575
+    targetPort: 7575
     name: http
