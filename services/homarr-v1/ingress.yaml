@@ -21,7 +21,7 @@ spec:
           service:
             name: homarr
             port:
-              number: 7575
+              number: 3000
   tls:
   - hosts:
     - home-v1.krockysphere.com  # CHANGE THIS - should match host above
