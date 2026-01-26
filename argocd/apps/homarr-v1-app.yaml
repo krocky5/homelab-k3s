@@ -9,7 +9,7 @@ spec:
   project: default
   
   source:
-    repoURL: https://github.com/kevinroccanova/k3s  # CHANGE THIS to your repo URL
+    repoURL: https://github.com/krocky5/homelab-k3s.git  # CHANGE THIS to your repo URL
     targetRevision: main  # or master, depending on your default branch
     path: services/homarr-v1
   
