@@ -8,6 +8,12 @@ data:
     tunnel: ${TUNNEL_ID}
     credentials-file: /etc/cloudflared/${TUNNEL_ID}.json
     ingress:
+      - hostname: argocd.krockysphere.com
+        service: http://argocd-server.argocd.svc.cluster.local:80
+      - hostname: auth.krockysphere.com
+        service: http://authentik-server.authentik.svc.cluster.local:9000
+      - hostname: home.krockysphere.com
+        service: http://homarr.homarr.svc.cluster.local:7575
       - hostname: windmill.krockysphere.com
         service: http://windmill.windmill.svc.cluster.local:80
       - hostname: grafana.krockysphere.com
