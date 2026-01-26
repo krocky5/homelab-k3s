@@ -5,11 +5,10 @@ metadata:
   namespace: tunnel
 data:
   config.yaml: |
-    tunnel: ${TUNNEL_ID}
-    credentials-file: /etc/cloudflared/${TUNNEL_ID}.json
+    # Remove tunnel: and credentials-file: lines when using TUNNEL_TOKEN
     ingress:
       - hostname: argocd.krockysphere.com
-        service: http://argocd-server.argocd.svc.cluster.local:80
+        service: http://argocd-server.argocd.svc.cluster.local:8080
       - hostname: auth.krockysphere.com
         service: http://authentik-server.authentik.svc.cluster.local:9000
       - hostname: home.krockysphere.com
