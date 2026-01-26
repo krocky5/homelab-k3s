@@ -27,6 +27,8 @@ spec:
             secretKeyRef:
               name: homarr-secrets
               key: secret-encryption-key
+        - name: HOSTNAME
+          value: "0.0.0.0"
         # Optional: Database configuration
         # Homarr 1.0 uses SQLite by default, but you can configure PostgreSQL/MySQL
         # - name: DB_URL
