@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/krocky5/k3s  # CHANGE THIS to your repo
+    repoURL: https://github.com/krocky5/homelab-k3s.git  # CHANGE THIS to your repo
     targetRevision: main  # or master, depending on your branch
     path: services/authentik
   destination:
