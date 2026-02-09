@@ -10,6 +10,10 @@ secret*.yaml
 *.key
 *.pem
 
+# KrakenD endpoint configs (keep these secret!)
+**/krakend-configs/*/endpoints.json
+**/krakend-configs/*/krakend.json
+
 # editors
 .vscode/
 .idea/
