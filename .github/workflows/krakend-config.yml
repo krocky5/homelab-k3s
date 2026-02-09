@@ -1,0 +1,160 @@
+name: KrakenD Config CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'krakend-configs/**'
+      - '.github/workflows/krakend-config.yml'
+  pull_request:
+    paths:
+      - 'krakend-configs/**'
+
+env:
+  KRAKEND_VERSION: '2.6'
+
+jobs:
+  validate-settings:
+    name: Validate KrakenD Settings
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [dev, prod]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Validate settings.json syntax
+        run: |
+          jq empty ../krakend-configs/${{ matrix.environment }}/settings.json
+          echo "✓ ${{ matrix.environment }}/settings.json is valid JSON"
+        working-directory: .kube
+
+      - name: Check required fields
+        run: |
+          SETTINGS="../krakend-configs/${{ matrix.environment }}/settings.json"
+
+          # Check required top-level fields
+          for field in version name timeout port output_encoding; do
+            if ! jq -e ".$field" "$SETTINGS" > /dev/null; then
+              echo "Error: Missing required field: $field"
+              exit 1
+            fi
+          done
+
+          echo "✓ All required fields present in ${{ matrix.environment }}/settings.json"
+        working-directory: .kube
+
+  build-and-deploy:
+    name: Build & Deploy KrakenD Config
+    runs-on: ubuntu-latest
+    needs: validate-settings
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        environment: [prod]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Restore endpoints from secrets
+        run: |
+          echo '${{ secrets.KRAKEND_PROD_ENDPOINTS }}' > ../krakend-configs/${{ matrix.environment }}/endpoints.json
+
+          # Validate the restored endpoints
+          jq empty ../krakend-configs/${{ matrix.environment }}/endpoints.json
+          echo "✓ Endpoints restored and validated"
+        working-directory: .kube
+        env:
+          KRAKEND_PROD_ENDPOINTS: ${{ secrets.KRAKEND_PROD_ENDPOINTS }}
+
+      - name: Build configuration
+        run: |
+          chmod +x ../krakend-configs/build.sh
+          ../krakend-configs/build.sh ${{ matrix.environment }}
+        working-directory: .kube
+
+      - name: Install KrakenD
+        run: |
+          wget https://repo.krakend.io/bin/krakend_${KRAKEND_VERSION}_amd64.tar.gz
+          tar -xzf krakend_${KRAKEND_VERSION}_amd64.tar.gz
+          sudo mv usr/bin/krakend /usr/local/bin/
+          krakend version
+
+      - name: Validate final configuration
+        run: |
+          krakend check -c ../krakend-configs/${{ matrix.environment }}/krakend.json -d
+          echo "✓ Final configuration is valid"
+        working-directory: .kube
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+          kubectl config current-context
+
+      - name: Update ConfigMap
+        run: |
+          kubectl create configmap krakend-config \
+            --from-file=krakend.json=../krakend-configs/${{ matrix.environment }}/krakend.json \
+            --namespace=krakend-${{ matrix.environment }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          echo "✓ ConfigMap updated"
+        working-directory: .kube
+
+      - name: Restart KrakenD deployment
+        run: |
+          kubectl rollout restart deployment/krakend -n krakend-${{ matrix.environment }}
+          kubectl rollout status deployment/krakend -n krakend-${{ matrix.environment }} --timeout=5m
+          echo "✓ KrakenD deployment restarted successfully"
+        working-directory: .kube
+
+  validate-dev:
+    name: Validate Dev Config (PR only)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Create mock endpoints for validation
+        run: |
+          cp ../krakend-configs/dev/endpoints.example.json ../krakend-configs/dev/endpoints.json
+        working-directory: .kube
+
+      - name: Build and validate dev config
+        run: |
+          chmod +x ../krakend-configs/build.sh
+          ../krakend-configs/build.sh dev
+        working-directory: .kube
+
+      - name: Comment PR with validation status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ KrakenD configuration validation passed!'
+            })
