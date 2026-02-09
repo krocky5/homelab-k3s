@@ -44,20 +44,22 @@ spec:
           name: vault-config
         - mountPath: /vault/data
           name: vault-data
-        livenessProbe:
-          httpGet:
-            path: /v1/sys/health?standbyok=true
-            port: 8200
-            scheme: HTTP
-          initialDelaySeconds: 60
-          periodSeconds: 10
         readinessProbe:
           httpGet:
-            path: /v1/sys/health?standbyok=true
+            path: /v1/sys/health?standbyok=true&sealedcode=200&uninitcode=200
             port: 8200
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 10
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /v1/sys/health?standbyok=true&sealedcode=200&uninitcode=200
+            port: 8200
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          failureThreshold: 3
         resources:
           requests:
             cpu: 250m
