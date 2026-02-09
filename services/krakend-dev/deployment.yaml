@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: krakend
+  namespace: krakend-dev
+  labels:
+    app: krakend
+    environment: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: krakend
+      environment: dev
+  template:
+    metadata:
+      labels:
+        app: krakend
+        environment: dev
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8090"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: krakend
+        image: devopsfaith/krakend:2.6
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 8090
+          name: metrics
+          protocol: TCP
+        env:
+        - name: KRAKEND_PORT
+          value: "8080"
+        - name: FC_ENABLE
+          value: "1"
+        volumeMounts:
+        - name: krakend-config
+          mountPath: /etc/krakend
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /__health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /__health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: krakend-config
+        configMap:
+          name: krakend-config
