@@ -244,13 +244,3 @@ jobs:
           docker run --rm -v $(pwd)/krakend-configs/dev:/etc/krakend \
             devopsfaith/krakend:2.6 check -d -c /etc/krakend/krakend.json
 
-      - name: Comment PR with validation status
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '✅ KrakenD configuration validation passed!\n\nEndpoints loaded from Vault and validated successfully.'
-            })
