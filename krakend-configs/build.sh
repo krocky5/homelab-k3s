@@ -1,41 +1,22 @@
 #!/bin/bash
 set -e
 
-ENV=${1:-dev}
+ENV=$1
 
-echo "Building KrakenD config for environment: $ENV"
-
-# Check if FC_ENABLE is set
-if [ -z "$FC_ENABLE" ]; then
-  export FC_ENABLE=1
-fi
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_DIR="$SCRIPT_DIR/$ENV"
-OUTPUT_FILE="$SCRIPT_DIR/$ENV/krakend.json"
-
-# Validate required files exist
-if [ ! -f "$CONFIG_DIR/settings.json" ]; then
-  echo "Error: settings.json not found in $CONFIG_DIR"
+if [ -z "$ENV" ]; then
+  echo "Usage: $0 <environment>"
   exit 1
 fi
 
-if [ ! -f "$CONFIG_DIR/endpoints.json" ]; then
-  echo "Error: endpoints.json not found in $CONFIG_DIR"
-  exit 1
-fi
+CONFIG_DIR="krakend-configs/$ENV"
 
-# Merge settings and endpoints
-echo "Merging configuration files..."
-jq -s '.[0] * .[1]' "$CONFIG_DIR/settings.json" "$CONFIG_DIR/endpoints.json" > "$OUTPUT_FILE"
+echo "Building KrakenD configuration for $ENV..."
 
-echo "✓ Configuration built successfully: $OUTPUT_FILE"
+# The endpoints.json from Vault is already {"endpoints": [...]}
+# So we just merge the two objects
+jq -s '.[0] * .[1]' \
+  "$CONFIG_DIR/settings.json" \
+  "$CONFIG_DIR/endpoints.json" \
+  > "$CONFIG_DIR/krakend.json"
 
-# Validate the configuration if krakend is available
-if command -v krakend &> /dev/null; then
-  echo "Validating configuration..."
-  krakend check -c "$OUTPUT_FILE" -d
-  echo "✓ Configuration is valid"
-else
-  echo "⚠ krakend command not found, skipping validation"
-fi
+echo "✓ Configuration built: $CONFIG_DIR/krakend.json"
