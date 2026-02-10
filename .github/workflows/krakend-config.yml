@@ -94,8 +94,9 @@ jobs:
 
       - name: Fetch KrakenD endpoints from Vault
         run: |
-          # Fetch endpoints
-          vault kv get -field=endpoints secret/krakend/${{ matrix.environment }}/endpoints > krakend-configs/${{ matrix.environment }}/endpoints.json
+          # Fetch endpoints as JSON object (not string)
+          vault kv get -format=json secret/krakend/${{ matrix.environment }}/endpoints | \
+            jq -r '.data.data.endpoints' > krakend-configs/${{ matrix.environment }}/endpoints.json
           
           # Validate
           jq empty krakend-configs/${{ matrix.environment }}/endpoints.json
@@ -229,7 +230,8 @@ jobs:
 
       - name: Fetch dev endpoints from Vault
         run: |
-          vault kv get -field=endpoints secret/krakend/dev/endpoints > krakend-configs/dev/endpoints.json
+          vault kv get -format=json secret/krakend/dev/endpoints | \
+            jq -r '.data.data.endpoints' > krakend-configs/dev/endpoints.json
           jq empty krakend-configs/dev/endpoints.json
 
       - name: Build and validate dev config
