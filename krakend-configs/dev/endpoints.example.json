@@ -1,0 +1,37 @@
+{
+  "endpoints": [
+    {
+      "endpoint": "/__health",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "backend": [
+        {
+          "url_pattern": "/__health",
+          "encoding": "no-op",
+          "host": ["http://localhost:8080"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/service1/{path}",
+      "method": "GET",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/{path}",
+          "encoding": "json",
+          "host": ["http://service1.namespace.svc.cluster.local:8080"],
+          "disable_host_sanitize": false
+        }
+      ],
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "max_rate": 1000,
+          "client_max_rate": 100,
+          "strategy": "ip"
+        }
+      }
+    }
+  ]
+}
