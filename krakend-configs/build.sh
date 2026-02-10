@@ -8,7 +8,7 @@ if [ -z "$ENV" ]; then
   exit 1
 fi
 
-CONFIG_DIR="$ENV"
+CONFIG_DIR="krakend-configs/$ENV"
 
 echo "Building KrakenD configuration for $ENV..."
 
@@ -16,6 +16,6 @@ echo "Building KrakenD configuration for $ENV..."
 jq -s '.[0] * .[1]' \
   "$CONFIG_DIR/settings.json" \
   "$CONFIG_DIR/endpoints.json" \
-  > "$CONFIG_DIR/krakend.json"
+  >"$CONFIG_DIR/krakend.json"
 
 echo "✓ Configuration built: $CONFIG_DIR/krakend.json"
