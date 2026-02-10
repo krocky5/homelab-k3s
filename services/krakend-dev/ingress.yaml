@@ -22,5 +22,5 @@ spec:
               number: 8080
   tls:
   - hosts:
-    - api-dev.yourdomain.com
+    - api-dev.krockysphere.com
     secretName: krakend-dev-tls
