@@ -81,6 +81,8 @@ jobs:
             role_id="${{ secrets.VAULT_ROLE_ID }}" \
             secret_id="${{ secrets.VAULT_SECRET_ID }}")
           
+          # CRITICAL: Mask token from logs to prevent exposure
+          echo "::add-mask::$VAULT_TOKEN"
           echo "VAULT_TOKEN=$VAULT_TOKEN" >> $GITHUB_ENV
           
           if [ -z "$VAULT_TOKEN" ] || [ "$VAULT_TOKEN" = "null" ]; then
@@ -225,6 +227,9 @@ jobs:
           VAULT_TOKEN=$(vault write -field=token auth/approle/login \
             role_id="${{ secrets.VAULT_ROLE_ID }}" \
             secret_id="${{ secrets.VAULT_SECRET_ID }}")
+          
+          # CRITICAL: Mask token from logs
+          echo "::add-mask::$VAULT_TOKEN"
           echo "VAULT_TOKEN=$VAULT_TOKEN" >> $GITHUB_ENV
 
       - name: Fetch dev endpoints from Vault
