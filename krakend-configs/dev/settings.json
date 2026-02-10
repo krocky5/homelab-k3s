@@ -1,0 +1,48 @@
+{
+  "$schema": "https://www.krakend.io/schema/v2.6/krakend.json",
+  "version": 3,
+  "name": "KrakenD API Gateway - Development",
+  "timeout": "10000ms",
+  "cache_ttl": "60s",
+  "output_encoding": "json",
+  "port": 8080,
+  "extra_config": {
+    "telemetry/logging": {
+      "level": "DEBUG",
+      "prefix": "[KRAKEND-DEV]",
+      "syslog": false,
+      "stdout": true
+    },
+    "telemetry/metrics": {
+      "collection_time": "60s",
+      "proxy_disabled": false,
+      "router_disabled": false,
+      "backend_disabled": false,
+      "endpoint_disabled": false,
+      "listen_address": ":8090"
+    },
+    "telemetry/opentelemetry": {
+      "service_name": "krakend-dev",
+      "service_version": "1.0.0",
+      "skip_paths": ["/__health"],
+      "exporters": {
+        "otlp": [
+          {
+            "name": "otel_collector",
+            "host": "otel-collector.default.svc.cluster.local",
+            "port": 4317,
+            "use_http": false
+          }
+        ]
+      }
+    },
+    "security/cors": {
+      "allow_origins": ["*"],
+      "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+      "allow_headers": ["*"],
+      "expose_headers": ["Content-Length", "X-Request-Id"],
+      "max_age": "12h",
+      "allow_credentials": true
+    }
+  }
+}

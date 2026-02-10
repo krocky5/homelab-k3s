@@ -1,0 +1,11 @@
+{
+  "$schema": "https://www.krakend.io/schema/v2.6/krakend.json",
+  "version": 3,
+  "name": "{{ .name }}",
+  "timeout": "{{ .timeout }}",
+  "cache_ttl": "{{ .cache_ttl }}",
+  "output_encoding": "{{ .output_encoding }}",
+  "port": {{ .port }},
+  "extra_config": {{ marshal .extra_config }},
+  "endpoints": {{ marshal .endpoints }}
+}
