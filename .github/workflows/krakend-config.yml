@@ -13,7 +13,7 @@ on:
       - 'krakend-configs/**'
 
 env:
-  KRAKEND_VERSION: '2.6'
+  KRAKEND_VERSION: '2.6.0'
   VAULT_ADDR: 'https://secrets.krockysphere.com'
 
 jobs:
@@ -116,8 +116,9 @@ jobs:
 
       - name: Install KrakenD
         run: |
-          wget https://repo.krakend.io/bin/krakend_${KRAKEND_VERSION}_amd64.tar.gz
-          tar -xzf krakend_${KRAKEND_VERSION}_amd64.tar.gz
+          # KrakenD uses format: 2.6.0 not 2.6
+          wget https://repo.krakend.io/bin/krakend_2.6.0_amd64.tar.gz
+          tar -xzf krakend_2.6.0_amd64.tar.gz
           sudo mv usr/bin/krakend /usr/local/bin/
           krakend version
 
@@ -244,8 +245,8 @@ jobs:
 
       - name: Install KrakenD
         run: |
-          wget https://repo.krakend.io/bin/krakend_${KRAKEND_VERSION}_amd64.tar.gz
-          tar -xzf krakend_${KRAKEND_VERSION}_amd64.tar.gz
+          wget https://repo.krakend.io/bin/krakend_2.6.0_amd64.tar.gz
+          tar -xzf krakend_2.6.0_amd64.tar.gz
           sudo mv usr/bin/krakend /usr/local/bin/
 
       - name: Validate configuration
