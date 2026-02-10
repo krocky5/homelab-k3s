@@ -114,18 +114,11 @@ jobs:
           chmod +x krakend-configs/build.sh
           krakend-configs/build.sh ${{ matrix.environment }}
 
-      - name: Install KrakenD
-        run: |
-          # Use official install script
-          curl -fsSL https://repo.krakend.io/bin/krakend_repo_signing_key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/krakend.gpg
-          echo "deb [signed-by=/usr/share/keyrings/krakend.gpg] https://repo.krakend.io/apt stable main" | sudo tee /etc/apt/sources.list.d/krakend.list
-          sudo apt-get update
-          sudo apt-get install -y krakend
-          krakend version
-
       - name: Validate final configuration
         run: |
-          krakend check -c krakend-configs/${{ matrix.environment }}/krakend.json -d
+          # Use Docker to validate config (no install needed)
+          docker run --rm -v $(pwd)/krakend-configs/${{ matrix.environment }}:/etc/krakend \
+            devopsfaith/krakend:2.6 check -d -c /etc/krakend/krakend.json
           echo "✓ Final configuration is valid"
 
       - name: Setup kubectl
@@ -244,16 +237,10 @@ jobs:
           chmod +x krakend-configs/build.sh
           krakend-configs/build.sh dev
 
-      - name: Install KrakenD
-        run: |
-          curl -fsSL https://repo.krakend.io/bin/krakend_repo_signing_key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/krakend.gpg
-          echo "deb [signed-by=/usr/share/keyrings/krakend.gpg] https://repo.krakend.io/apt stable main" | sudo tee /etc/apt/sources.list.d/krakend.list
-          sudo apt-get update
-          sudo apt-get install -y krakend
-
       - name: Validate configuration
         run: |
-          krakend check -c krakend-configs/dev/krakend.json -d
+          docker run --rm -v $(pwd)/krakend-configs/dev:/etc/krakend \
+            devopsfaith/krakend:2.6 check -d -c /etc/krakend/krakend.json
 
       - name: Comment PR with validation status
         uses: actions/github-script@v7
