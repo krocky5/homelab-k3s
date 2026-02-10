@@ -14,6 +14,7 @@ on:
 
 env:
   KRAKEND_VERSION: '2.6'
+  VAULT_ADDR: 'https://secrets.krockysphere.com'
 
 jobs:
   validate-settings:
@@ -32,15 +33,13 @@ jobs:
 
       - name: Validate settings.json syntax
         run: |
-          jq empty ../krakend-configs/${{ matrix.environment }}/settings.json
+          jq empty krakend-configs/${{ matrix.environment }}/settings.json
           echo "✓ ${{ matrix.environment }}/settings.json is valid JSON"
-        working-directory: .kube
 
       - name: Check required fields
         run: |
-          SETTINGS="../krakend-configs/${{ matrix.environment }}/settings.json"
+          SETTINGS="krakend-configs/${{ matrix.environment }}/settings.json"
 
-          # Check required top-level fields
           for field in version name timeout port output_encoding; do
             if ! jq -e ".$field" "$SETTINGS" > /dev/null; then
               echo "Error: Missing required field: $field"
@@ -49,7 +48,6 @@ jobs:
           done
 
           echo "✓ All required fields present in ${{ matrix.environment }}/settings.json"
-        working-directory: .kube
 
   build-and-deploy:
     name: Build & Deploy KrakenD Config
@@ -69,22 +67,50 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq
 
-      - name: Restore endpoints from secrets
+      - name: Install Vault CLI
         run: |
-          echo '${{ secrets.KRAKEND_PROD_ENDPOINTS }}' > ../krakend-configs/${{ matrix.environment }}/endpoints.json
+          wget https://releases.hashicorp.com/vault/1.15.6/vault_1.15.6_linux_amd64.zip
+          unzip vault_1.15.6_linux_amd64.zip
+          sudo mv vault /usr/local/bin/
+          vault version
 
-          # Validate the restored endpoints
-          jq empty ../krakend-configs/${{ matrix.environment }}/endpoints.json
-          echo "✓ Endpoints restored and validated"
-        working-directory: .kube
-        env:
-          KRAKEND_PROD_ENDPOINTS: ${{ secrets.KRAKEND_PROD_ENDPOINTS }}
+      - name: Login to Vault with AppRole
+        run: |
+          # Login using AppRole
+          VAULT_TOKEN=$(vault write -field=token auth/approle/login \
+            role_id="${{ secrets.VAULT_ROLE_ID }}" \
+            secret_id="${{ secrets.VAULT_SECRET_ID }}")
+          
+          echo "VAULT_TOKEN=$VAULT_TOKEN" >> $GITHUB_ENV
+          
+          if [ -z "$VAULT_TOKEN" ] || [ "$VAULT_TOKEN" = "null" ]; then
+            echo "Failed to get Vault token"
+            exit 1
+          fi
+          
+          echo "✓ Successfully authenticated to Vault"
+
+      - name: Fetch KrakenD endpoints from Vault
+        run: |
+          # Fetch endpoints
+          vault kv get -field=endpoints secret/krakend/${{ matrix.environment }}/endpoints > krakend-configs/${{ matrix.environment }}/endpoints.json
+          
+          # Validate
+          jq empty krakend-configs/${{ matrix.environment }}/endpoints.json
+          echo "✓ Endpoints fetched and validated"
+
+      - name: Fetch kubeconfig from Vault
+        run: |
+          # Fetch and decode kubeconfig
+          mkdir -p $HOME/.kube
+          vault kv get -field=config secret/k8s/kubeconfig | base64 -d > $HOME/.kube/config
+          
+          echo "✓ Kubeconfig fetched and configured"
 
       - name: Build configuration
         run: |
-          chmod +x ../krakend-configs/build.sh
-          ../krakend-configs/build.sh ${{ matrix.environment }}
-        working-directory: .kube
+          chmod +x krakend-configs/build.sh
+          krakend-configs/build.sh ${{ matrix.environment }}
 
       - name: Install KrakenD
         run: |
@@ -95,35 +121,86 @@ jobs:
 
       - name: Validate final configuration
         run: |
-          krakend check -c ../krakend-configs/${{ matrix.environment }}/krakend.json -d
+          krakend check -c krakend-configs/${{ matrix.environment }}/krakend.json -d
           echo "✓ Final configuration is valid"
-        working-directory: .kube
 
       - name: Setup kubectl
         uses: azure/setup-kubectl@v3
 
-      - name: Configure kubeconfig
+      - name: Verify kubectl access
         run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
           kubectl config current-context
+          kubectl get nodes
 
-      - name: Update ConfigMap
+      - name: Install kubeseal
         run: |
-          kubectl create configmap krakend-config \
-            --from-file=krakend.json=../krakend-configs/${{ matrix.environment }}/krakend.json \
+          wget https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.24.0/kubeseal-0.24.0-linux-amd64.tar.gz
+          tar -xvzf kubeseal-0.24.0-linux-amd64.tar.gz
+          sudo install -m 755 kubeseal /usr/local/bin/kubeseal
+
+      - name: Create and seal secret
+        run: |
+          # Create regular secret
+          kubectl create secret generic krakend-config \
+            --from-file=krakend.json=krakend-configs/${{ matrix.environment }}/krakend.json \
             --namespace=krakend-${{ matrix.environment }} \
-            --dry-run=client -o yaml | kubectl apply -f -
+            --dry-run=client -o yaml > /tmp/krakend-secret.yaml
 
-          echo "✓ ConfigMap updated"
-        working-directory: .kube
+          # Seal it
+          kubeseal -f /tmp/krakend-secret.yaml \
+            -w services/krakend-${{ matrix.environment }}/sealed-secret.yaml \
+            --namespace=krakend-${{ matrix.environment }}
 
-      - name: Restart KrakenD deployment
+          echo "✓ Secret sealed"
+
+      - name: Commit sealed secret
         run: |
-          kubectl rollout restart deployment/krakend -n krakend-${{ matrix.environment }}
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add services/krakend-${{ matrix.environment }}/sealed-secret.yaml
+          
+          if ! git diff --staged --quiet; then
+            git commit -m "Update sealed KrakenD ${{ matrix.environment }} config [skip ci]"
+            git push
+            echo "✓ Sealed secret committed"
+          else
+            echo "✓ No changes to sealed secret"
+          fi
+
+      - name: Wait for ArgoCD sync
+        run: |
+          echo "Waiting for ArgoCD to sync..."
+          sleep 30
+          
           kubectl rollout status deployment/krakend -n krakend-${{ matrix.environment }} --timeout=5m
-          echo "✓ KrakenD deployment restarted successfully"
-        working-directory: .kube
+          echo "✓ KrakenD deployment updated successfully"
+
+      - name: Verify health
+        run: |
+          kubectl port-forward -n krakend-${{ matrix.environment }} svc/krakend 8080:8080 &
+          PF_PID=$!
+          sleep 5
+          
+          if curl -f http://localhost:8080/__health; then
+            echo "✓ Health check passed"
+          else
+            echo "✗ Health check failed"
+            exit 1
+          fi
+          
+          kill $PF_PID
+
+      - name: Update Vault with deployment metadata
+        if: success()
+        run: |
+          # Store deployment metadata
+          vault kv put secret/krakend/${{ matrix.environment }}/deployment \
+            timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            commit="${{ github.sha }}" \
+            actor="${{ github.actor }}" \
+            run_id="${{ github.run_id }}"
+
+          echo "✓ Deployment metadata stored in Vault"
 
   validate-dev:
     name: Validate Dev Config (PR only)
@@ -137,16 +214,38 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Create mock endpoints for validation
+      - name: Install Vault CLI
         run: |
-          cp ../krakend-configs/dev/endpoints.example.json ../krakend-configs/dev/endpoints.json
-        working-directory: .kube
+          wget https://releases.hashicorp.com/vault/1.15.6/vault_1.15.6_linux_amd64.zip
+          unzip vault_1.15.6_linux_amd64.zip
+          sudo mv vault /usr/local/bin/
+
+      - name: Login to Vault
+        run: |
+          VAULT_TOKEN=$(vault write -field=token auth/approle/login \
+            role_id="${{ secrets.VAULT_ROLE_ID }}" \
+            secret_id="${{ secrets.VAULT_SECRET_ID }}")
+          echo "VAULT_TOKEN=$VAULT_TOKEN" >> $GITHUB_ENV
+
+      - name: Fetch dev endpoints from Vault
+        run: |
+          vault kv get -field=endpoints secret/krakend/dev/endpoints > krakend-configs/dev/endpoints.json
+          jq empty krakend-configs/dev/endpoints.json
 
       - name: Build and validate dev config
         run: |
-          chmod +x ../krakend-configs/build.sh
-          ../krakend-configs/build.sh dev
-        working-directory: .kube
+          chmod +x krakend-configs/build.sh
+          krakend-configs/build.sh dev
+
+      - name: Install KrakenD
+        run: |
+          wget https://repo.krakend.io/bin/krakend_${KRAKEND_VERSION}_amd64.tar.gz
+          tar -xzf krakend_${KRAKEND_VERSION}_amd64.tar.gz
+          sudo mv usr/bin/krakend /usr/local/bin/
+
+      - name: Validate configuration
+        run: |
+          krakend check -c krakend-configs/dev/krakend.json -d
 
       - name: Comment PR with validation status
         uses: actions/github-script@v7
@@ -156,5 +255,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '✅ KrakenD configuration validation passed!'
+              body: '✅ KrakenD configuration validation passed!\n\nEndpoints loaded from Vault and validated successfully.'
             })
