@@ -8,12 +8,11 @@ if [ -z "$ENV" ]; then
   exit 1
 fi
 
-CONFIG_DIR="krakend-configs/$ENV"
+CONFIG_DIR="$ENV"
 
 echo "Building KrakenD configuration for $ENV..."
 
-# The endpoints.json from Vault is already {"endpoints": [...]}
-# So we just merge the two objects
+# Merge settings and endpoints
 jq -s '.[0] * .[1]' \
   "$CONFIG_DIR/settings.json" \
   "$CONFIG_DIR/endpoints.json" \
