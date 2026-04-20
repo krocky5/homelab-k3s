@@ -146,7 +146,7 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git remote set-url origin https://x-access-token:${GH_PAT}@github.com/krocky5/homelab-k3s
-          git pull --rebase origin main
+          git pull --rebase --autostash origin main
           git add services/krakend-${{ matrix.environment }}/sealed-secret.yaml
 
           if ! git diff --staged --quiet; then
