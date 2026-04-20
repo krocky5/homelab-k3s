@@ -54,6 +54,8 @@ jobs:
     runs-on: [self-hosted, homelab]
     needs: validate-settings
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
     strategy:
       matrix:
         environment: [prod]
