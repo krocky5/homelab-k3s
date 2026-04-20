@@ -7,6 +7,7 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: authentik-authentik-forwardauth-with-cookies@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
@@ -22,5 +23,5 @@ spec:
                   number: 8200
   tls:
     - hosts:
-        - vault.yourdomain.com  # UPDATE THIS
+        - secrets.krockysphere.com
       secretName: vault-tls

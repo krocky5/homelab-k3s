@@ -4,15 +4,13 @@ metadata:
   name: homarr
   namespace: homarr-v1
   annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
-    # Protect Homarr with Authentik
-    traefik.ingress.kubernetes.io/router.middlewares: authentik-authentik-forwardauth@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
-  - host: home.krockysphere.com  # CHANGE THIS - using v1 subdomain for testing
+  - host: home.krockysphere.com
     http:
       paths:
       - path: /
@@ -24,5 +22,5 @@ spec:
               number: 3000
   tls:
   - hosts:
-    - home-v1.krockysphere.com  # CHANGE THIS - should match host above
+    - home.krockysphere.com
     secretName: homarr-v1-tls

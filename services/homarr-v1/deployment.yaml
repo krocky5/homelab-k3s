@@ -15,13 +15,13 @@ spec:
     spec:
       containers:
       - name: homarr
-        image: ghcr.io/homarr-labs/homarr:latest  # Use latest tag for v1.x
+        image: ghcr.io/homarr-labs/homarr:latest
         ports:
         - containerPort: 3000
           name: http
         env:
         - name: TZ
-          value: "America/New_York"  # CHANGE THIS to your timezone
+          value: "America/New_York"
         - name: SECRET_ENCRYPTION_KEY
           valueFrom:
             secretKeyRef:
@@ -29,18 +29,30 @@ spec:
               key: secret-encryption-key
         - name: HOSTNAME
           value: "0.0.0.0"
-        # Optional: Database configuration
-        # Homarr 1.0 uses SQLite by default, but you can configure PostgreSQL/MySQL
-        # - name: DB_URL
-        #   value: "postgresql://user:password@hostname:5432/homarr"
-        # Optional: Authentication configuration
-        # - name: AUTH_SESSION_EXPIRY_TIME
-        #   value: "7d"
-        # - name: AUTH_SECRET
-        #   valueFrom:
-        #     secretKeyRef:
-        #       name: homarr-secrets
-        #       key: auth-secret
+        # OIDC via Authentik - users sign in through Authentik, no separate Homarr password
+        # Create the Authentik provider with redirect URI: https://home.krockysphere.com/api/auth/callback/oidc
+        # Authentik app slug: "homarr"
+        - name: AUTH_PROVIDERS
+          value: "oidc"
+        - name: AUTH_OIDC_ISSUER
+          valueFrom:
+            secretKeyRef:
+              name: homarr-oidc-secret
+              key: issuer
+        - name: AUTH_OIDC_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: homarr-oidc-secret
+              key: client-id
+        - name: AUTH_OIDC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: homarr-oidc-secret
+              key: client-secret
+        - name: AUTH_OIDC_ADMIN_GROUP
+          value: "homelab-admin"
+        - name: AUTH_OIDC_OWNER_GROUP
+          value: "homelab-admin"
         volumeMounts:
         - name: data
           mountPath: /appdata

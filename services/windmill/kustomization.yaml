@@ -5,6 +5,7 @@ namespace: windmill
 
 resources:
   - secret.yaml
+  - windmill-oauth-secret.yaml
   - postgres.yaml
   - deployment.yaml
   - service.yaml

@@ -19,17 +19,29 @@ spec:
         - name: windmill
           image: ghcr.io/windmill-labs/windmill:main
           env:
-            # Required by Windmill
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
                   name: windmill-db-secret
                   key: database_url
-            # Optional: password available if needed
             - name: DATABASE_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: windmill-db-secret
                   key: password
+            - name: BASE_URL
+              value: "https://windmill.krockysphere.com"
+            # Mount oauth.json for OIDC login via Authentik.
+            # After applying windmill-oauth-config.yaml, users see "Login with Authentik" instead of password prompt.
+            - name: OAUTH_JSON_PATH
+              value: "/etc/windmill/oauth.json"
+          volumeMounts:
+            - name: oauth-config
+              mountPath: /etc/windmill
+              readOnly: true
           ports:
             - containerPort: 8000
+      volumes:
+        - name: oauth-config
+          secret:
+            secretName: windmill-oauth-secret

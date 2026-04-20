@@ -1,7 +1,30 @@
+# Apply manually after filling in client ID:
+#   kubectl apply -f argocd/argocd-cm.yaml
+#   kubectl apply -f argocd/argocd-oidc-secret.yaml
+#
+# Authentik app slug: "argocd"
+# Redirect URI to set in Authentik: https://argocd.krockysphere.com/auth/callback
+# Add "groups" scope mapping in Authentik provider property mappings.
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: argocd-cm
   namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
 data:
-  url: ""  # empty is fine
+  url: "https://argocd.krockysphere.com"
+  oidc.config: |
+    name: Authentik
+    issuer: https://auth.krockysphere.com/application/o/argocd/
+    clientID: REPLACE_WITH_AUTHENTIK_CLIENT_ID
+    clientSecret: $oidc.authentik.clientSecret
+    requestedScopes:
+      - openid
+      - profile
+      - email
+      - groups
+    requestedIDTokenClaims:
+      groups:
+        essential: true

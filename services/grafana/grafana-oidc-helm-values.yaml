@@ -1,0 +1,40 @@
+# Apply with:
+#   helm upgrade --reuse-values monitoring prometheus-community/kube-prometheus-stack \
+#     -n monitoring -f services/grafana/grafana-oidc-helm-values.yaml
+#
+# BEFORE applying: create the secret in Kubernetes:
+#   kubectl apply -f services/grafana/grafana-oidc-secret.yaml
+# Then fill in client_id / client_secret from the Authentik provider you created.
+#
+# Authentik app slug used below: "grafana"
+# Create the Authentik provider with redirect URI:
+#   https://grafana.krockysphere.com/login/generic_oauth
+
+grafana:
+  envFromSecret: grafana-oidc-secret
+  grafana.ini:
+    server:
+      domain: grafana.krockysphere.com
+      root_url: "https://grafana.krockysphere.com"
+    auth:
+      oauth_auto_login: true
+      disable_login_form: false
+    auth.generic_oauth:
+      enabled: true
+      name: Authentik
+      allow_sign_up: true
+      client_id: "${GF_AUTH_GENERIC_OAUTH_CLIENT_ID}"
+      client_secret: "${GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}"
+      scopes: "openid profile email"
+      auth_url: "https://auth.krockysphere.com/application/o/grafana/authorize/"
+      token_url: "https://auth.krockysphere.com/application/o/token/"
+      api_url: "https://auth.krockysphere.com/application/o/userinfo/"
+      use_pkce: true
+      role_attribute_path: >-
+        contains(groups[*], 'homelab-admin') && 'Admin' ||
+        contains(groups[*], 'homelab-user') && 'Editor' ||
+        'Viewer'
+      role_attribute_strict: false
+      groups_attribute_path: groups
+      auto_assign_org: true
+      auto_assign_org_role: Viewer

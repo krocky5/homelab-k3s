@@ -7,6 +7,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     cert-manager.io/cluster-issuer: cloudflare-issuer
+    traefik.ingress.kubernetes.io/router.middlewares: authentik-authentik-forwardauth-with-cookies@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
