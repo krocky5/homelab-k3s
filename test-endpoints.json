@@ -1,0 +1,39 @@
+{
+  "endpoints": [
+    {
+      "endpoint": "/health",
+      "method": "GET",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/health",
+          "encoding": "json",
+          "host": [
+            "http://localhost:8080"
+          ]
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/test",
+      "method": "GET",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/",
+          "encoding": "json",
+          "host": [
+            "http://test-api.test-api.svc.cluster.local"
+          ]
+        }
+      ],
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "max_rate": 100,
+          "client_max_rate": 10,
+          "strategy": "ip"
+        }
+      }
+    }
+  ]
+}
