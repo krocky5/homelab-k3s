@@ -150,7 +150,7 @@ jobs:
 
           if ! git diff --staged --quiet; then
             git commit -m "Update sealed KrakenD ${{ matrix.environment }} config [skip ci]"
-            git push
+            git push --force-with-lease
             echo "✓ Sealed secret committed"
           else
             echo "✓ No changes to sealed secret"
