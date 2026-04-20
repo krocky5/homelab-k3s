@@ -1,0 +1,187 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: krakend-prod
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: krakend-config
+  namespace: krakend-prod
+data:
+  krakend.json: |
+    {
+      "version": 3,
+      "name": "KrakenD API Gateway - Test",
+      "timeout": "5000ms",
+      "cache_ttl": "300s",
+      "output_encoding": "json",
+      "port": 8080,
+      "extra_config": {
+        "telemetry/metrics": {
+          "collection_time": "60s",
+          "listen_address": ":8090"
+        }
+      },
+      "endpoints": [
+        {
+          "endpoint": "/health",
+          "method": "GET",
+          "backend": [
+            {
+              "url_pattern": "/health",
+              "host": ["http://localhost:8080"]
+            }
+          ]
+        },
+        {
+          "endpoint": "/api/test",
+          "method": "GET",
+          "backend": [
+            {
+              "url_pattern": "/",
+              "host": ["http://test-api.test-api.svc.cluster.local"]
+            }
+          ]
+        }
+      ]
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: krakend
+  namespace: krakend-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: krakend
+  template:
+    metadata:
+      labels:
+        app: krakend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8090"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: krakend
+        image: devopsfaith/krakend:2.6
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8090
+          name: metrics
+        volumeMounts:
+        - name: krakend-config
+          mountPath: /etc/krakend
+        - name: tmp
+          mountPath: /tmp
+        env:
+        - name: KRAKEND_PORT
+          value: "8080"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: krakend-config
+        configMap:
+          name: krakend-config
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: krakend
+  namespace: krakend-prod
+  labels:
+    app: krakend
+spec:
+  selector:
+    app: krakend
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+    name: http
+  - protocol: TCP
+    port: 8090
+    targetPort: 8090
+    name: metrics
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: krakend
+  namespace: krakend-prod
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: api.krockysphere.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: krakend
+            port:
+              number: 8080
+  tls:
+  - hosts:
+    - api.krockysphere.com
+    secretName: krakend-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: krakend-ratelimit
+  namespace: krakend-prod
+spec:
+  rateLimit:
+    average: 100
+    burst: 50
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: krakend
+  namespace: krakend-prod
+  labels:
+    app: krakend
+spec:
+  selector:
+    matchLabels:
+      app: krakend
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /__stats
