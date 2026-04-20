@@ -140,11 +140,14 @@ jobs:
           echo "✓ Secret sealed"
 
       - name: Commit sealed secret
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
+          git remote set-url origin https://x-access-token:${GH_PAT}@github.com/krocky5/homelab-k3s
           git add services/krakend-${{ matrix.environment }}/sealed-secret.yaml
-          
+
           if ! git diff --staged --quiet; then
             git commit -m "Update sealed KrakenD ${{ matrix.environment }} config [skip ci]"
             git push
