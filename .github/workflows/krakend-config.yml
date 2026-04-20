@@ -19,7 +19,7 @@ env:
 jobs:
   validate-settings:
     name: Validate KrakenD Settings
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, homelab]
     strategy:
       matrix:
         environment: [dev, prod]
@@ -51,7 +51,7 @@ jobs:
 
   build-and-deploy:
     name: Build & Deploy KrakenD Config
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, homelab]
     needs: validate-settings
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     strategy:
@@ -66,13 +66,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y jq
-
-      - name: Install Vault CLI
-        run: |
-          wget https://releases.hashicorp.com/vault/1.15.6/vault_1.15.6_linux_amd64.zip
-          unzip vault_1.15.6_linux_amd64.zip
-          sudo mv vault /usr/local/bin/
-          vault version
 
       - name: Login to Vault with AppRole
         run: |
@@ -122,19 +115,10 @@ jobs:
             devopsfaith/krakend:2.6 check -d -c /etc/krakend/krakend.json
           echo "✓ Final configuration is valid"
 
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v3
-
       - name: Verify kubectl access
         run: |
           kubectl config current-context
           kubectl get nodes
-
-      - name: Install kubeseal
-        run: |
-          wget https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.24.0/kubeseal-0.24.0-linux-amd64.tar.gz
-          tar -xvzf kubeseal-0.24.0-linux-amd64.tar.gz
-          sudo install -m 755 kubeseal /usr/local/bin/kubeseal
 
       - name: Create and seal secret
         run: |
@@ -202,7 +186,7 @@ jobs:
 
   validate-dev:
     name: Validate Dev Config (PR only)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, homelab]
     if: github.event_name == 'pull_request'
 
     steps:
@@ -211,12 +195,6 @@ jobs:
 
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: Install Vault CLI
-        run: |
-          wget https://releases.hashicorp.com/vault/1.15.6/vault_1.15.6_linux_amd64.zip
-          unzip vault_1.15.6_linux_amd64.zip
-          sudo mv vault /usr/local/bin/
 
       - name: Login to Vault
         run: |
