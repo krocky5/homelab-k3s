@@ -4,9 +4,10 @@
 # Redirect URI: https://argocd.krockysphere.com/auth/callback
 # Add "groups" scope mapping in Authentik provider property mappings.
 #
-# rootCA is Traefik's internal self-signed cert. Pods reach auth.krockysphere.com
-# via CoreDNS override → Traefik ClusterIP, which presents this cert internally.
-# Cloudflare handles the public-facing TLS; this is only needed for in-cluster calls.
+# rootCA is the long-lived self-signed cert stored in the authentik/authentik-tls
+# secret, which Traefik serves for auth.krockysphere.com. Pods reach that host via
+# CoreDNS override → Traefik ClusterIP. Cloudflare handles public-facing TLS; this
+# pin only covers in-cluster calls. Cert expires 2036-04-18 — rotate before then.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -32,23 +33,23 @@ data:
         essential: true
     rootCA: |
       -----BEGIN CERTIFICATE-----
-      MIIDXjCCAkagAwIBAgIRAMfw0vCHpahWa2V+TRsVR/IwDQYJKoZIhvcNAQELBQAw
-      HzEdMBsGA1UEAxMUVFJBRUZJSyBERUZBVUxUIENFUlQwHhcNMjYwNDIxMDA1NjQy
-      WhcNMjcwNDIxMDA1NjQyWjAfMR0wGwYDVQQDExRUUkFFRklLIERFRkFVTFQgQ0VS
-      VDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALAHLW5uTFQqNKXCeZsO
-      pGim+gpsQfZZaER1qwhcVW1JpHZ2JS4ON1QFjy9MhKNYvWhGfyUc+x2xO/Gm/o5z
-      C3vsd3gMU/o7nir5PpNEIMvj7xyGITD3lkQKqAk/Ixf8//qsJRTSnm0jlzYKchDh
-      MyNKtWzW5QNMwmyHju7GurHNRi4SYXp1htmOu2LGRkBHeJq79DDNivpXFIb4iqti
-      M3071+CHhgSMreACANiO21EfiK2HV+nfiARd/sM6ve40BjM6s/q+PnVeQ8DeGkK1
-      oKclJnoZmXt2fnPQ8FmwxeA1A4vuEnmDU1pnAPSFbRkAzWVWn+6Q9wh3bNE66Ziu
-      s1cCAwEAAaOBlDCBkTAOBgNVHQ8BAf8EBAMCA7gwEwYDVR0lBAwwCgYIKwYBBQUH
-      AwEwDAYDVR0TAQH/BAIwADBcBgNVHREEVTBTglFhOTcxM2Q4YWJmMzAxMzU2ODhk
-      ZmNhOTcwYWMyODdmMC5hZjNmZWY1YWY0YTcwOTMzMzU3MzY1YjA1MjkyZjRkYy50
-      cmFlZmlrLmRlZmF1bHQwDQYJKoZIhvcNAQELBQADggEBAGla78qY2Dm5M4jeXROX
-      wBcZn7wZ1zuMxI7VJbntbAGblk0uEHYbC+9SGJbPkpgNj+IWKpSXKf4otG+Iyqti
-      dv9GKzbYHzfzDrrhiOOJIdV+Q1/uGUXVJ6XQ949RGWEO9rNHAKc4wxfzh7Sl9Nmo
-      z+yMHOkHQZjlxxkFr11TnnI4b980L/dqlI7XNRxMIVOm4uD0M/Ay+Zap2ZEk8Y5Z
-      /wesTRvS+iiuVZck06yYn5od4GaSG8eYI5Ll2dbpfAj+vSqYokXDRQJhWKfDy99R
-      DtcZ1PZUy6qEZorecwZ+vsnpdjz+hwY9fwCMNGvmMVz4CGZDONsvWV91eJa2TBIn
-      ZGs=
+      MIIDZzCCAk+gAwIBAgIUKb6cQqBXvb+jJCSJ1UBvpzt4KBIwDQYJKoZIhvcNAQEL
+      BQAwIDEeMBwGA1UEAwwVYXV0aC5rcm9ja3lzcGhlcmUuY29tMB4XDTI2MDQyMTAx
+      MjgxNVoXDTM2MDQxODAxMjgxNVowIDEeMBwGA1UEAwwVYXV0aC5rcm9ja3lzcGhl
+      cmUuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7kQhdPShJu2I
+      hcGC2xrkxFePKM2vyBAySATTxVYlsiIzeJV49Qr/RFgKmQJ1IjbFESLzqq8umMKe
+      f7bJBxjlQvpTxWZQRCEOH3umLkf++qibXaXBi1b//FV82AAVEnTj6fAphHBcxs4c
+      oR16xc/55MU+1t52OtxR17d7ge41FpxtsPsVXu01eJcQcmiMniQmu/NHfpHG0JJ4
+      +aiP56DRWKVHYuDzVOWO0OkDFuIoycTaUQHlJiWUMnTFfREPztKLgoHYP7t6x1OY
+      2kqWwe7RuC6UGGdMA2qCwrZtV0wz2TZW0s8aTZjQ/Ths7q6dSnICUoEDoYaY/xnS
+      aUbbvj7RiQIDAQABo4GYMIGVMB0GA1UdDgQWBBQCmDVwn9kqxtldF1PrprwctH2t
+      XTAfBgNVHSMEGDAWgBQCmDVwn9kqxtldF1PrprwctH2tXTAPBgNVHRMBAf8EBTAD
+      AQH/MCAGA1UdEQQZMBeCFWF1dGgua3JvY2t5c3BoZXJlLmNvbTALBgNVHQ8EBAMC
+      BaAwEwYDVR0lBAwwCgYIKwYBBQUHAwEwDQYJKoZIhvcNAQELBQADggEBAH1nbi+Y
+      7YTr/m+Ay2L4gZmlj67VY6nykUJzLz2MJeLyG5oWk0zDdM4UMICQvSV5Z1Oyr4WE
+      Ds+k1vOeSlIVPvTtqx6pRo+gt1Xh+db1UWMf4KLA96BaxtBenT1tblduOOMAOF4v
+      PnCklAtOjIU9avVDKL88tGfXi98yo70/luoLFbb0v7gDnJqkVcgSTAL6W0dUiwdM
+      X4d5ZK+WfHf7p1gSVvOU+J5i6edgbQAN08oJQDIICRITPW6OMiPq5sKy4MSnarZS
+      LyCkk/CWTzzF9v+aHD0ZanlIYH6mHagMLtJRWiao9Ro97b3n0PkaQcn9goqMEZrD
+      Km84OynfVTrhTOY=
       -----END CERTIFICATE-----
