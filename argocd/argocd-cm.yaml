@@ -1,10 +1,12 @@
-# Apply manually after filling in client ID:
-#   kubectl apply -f argocd/argocd-cm.yaml
-#   kubectl apply -f argocd/argocd-oidc-secret.yaml
+# Apply manually: kubectl apply -f argocd/argocd-cm.yaml
 #
 # Authentik app slug: "argocd"
-# Redirect URI to set in Authentik: https://argocd.krockysphere.com/auth/callback
+# Redirect URI: https://argocd.krockysphere.com/auth/callback
 # Add "groups" scope mapping in Authentik provider property mappings.
+#
+# rootCA is Traefik's internal self-signed cert. Pods reach auth.krockysphere.com
+# via CoreDNS override → Traefik ClusterIP, which presents this cert internally.
+# Cloudflare handles the public-facing TLS; this is only needed for in-cluster calls.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -28,4 +30,25 @@ data:
     requestedIDTokenClaims:
       groups:
         essential: true
-    insecureSkipVerify: true
+    rootCA: |
+      -----BEGIN CERTIFICATE-----
+      MIIDXjCCAkagAwIBAgIRAMfw0vCHpahWa2V+TRsVR/IwDQYJKoZIhvcNAQELBQAw
+      HzEdMBsGA1UEAxMUVFJBRUZJSyBERUZBVUxUIENFUlQwHhcNMjYwNDIxMDA1NjQy
+      WhcNMjcwNDIxMDA1NjQyWjAfMR0wGwYDVQQDExRUUkFFRklLIERFRkFVTFQgQ0VS
+      VDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALAHLW5uTFQqNKXCeZsO
+      pGim+gpsQfZZaER1qwhcVW1JpHZ2JS4ON1QFjy9MhKNYvWhGfyUc+x2xO/Gm/o5z
+      C3vsd3gMU/o7nir5PpNEIMvj7xyGITD3lkQKqAk/Ixf8//qsJRTSnm0jlzYKchDh
+      MyNKtWzW5QNMwmyHju7GurHNRi4SYXp1htmOu2LGRkBHeJq79DDNivpXFIb4iqti
+      M3071+CHhgSMreACANiO21EfiK2HV+nfiARd/sM6ve40BjM6s/q+PnVeQ8DeGkK1
+      oKclJnoZmXt2fnPQ8FmwxeA1A4vuEnmDU1pnAPSFbRkAzWVWn+6Q9wh3bNE66Ziu
+      s1cCAwEAAaOBlDCBkTAOBgNVHQ8BAf8EBAMCA7gwEwYDVR0lBAwwCgYIKwYBBQUH
+      AwEwDAYDVR0TAQH/BAIwADBcBgNVHREEVTBTglFhOTcxM2Q4YWJmMzAxMzU2ODhk
+      ZmNhOTcwYWMyODdmMC5hZjNmZWY1YWY0YTcwOTMzMzU3MzY1YjA1MjkyZjRkYy50
+      cmFlZmlrLmRlZmF1bHQwDQYJKoZIhvcNAQELBQADggEBAGla78qY2Dm5M4jeXROX
+      wBcZn7wZ1zuMxI7VJbntbAGblk0uEHYbC+9SGJbPkpgNj+IWKpSXKf4otG+Iyqti
+      dv9GKzbYHzfzDrrhiOOJIdV+Q1/uGUXVJ6XQ949RGWEO9rNHAKc4wxfzh7Sl9Nmo
+      z+yMHOkHQZjlxxkFr11TnnI4b980L/dqlI7XNRxMIVOm4uD0M/Ay+Zap2ZEk8Y5Z
+      /wesTRvS+iiuVZck06yYn5od4GaSG8eYI5Ll2dbpfAj+vSqYokXDRQJhWKfDy99R
+      DtcZ1PZUy6qEZorecwZ+vsnpdjz+hwY9fwCMNGvmMVz4CGZDONsvWV91eJa2TBIn
+      ZGs=
+      -----END CERTIFICATE-----
