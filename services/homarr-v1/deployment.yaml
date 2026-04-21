@@ -53,11 +53,18 @@ spec:
           value: "homelab-admin"
         - name: AUTH_OIDC_OWNER_GROUP
           value: "homelab-admin"
+        # Trust the self-signed cert Traefik serves for auth.krockysphere.com
+        # (in-cluster path via CoreDNS override). See authentik-ca ConfigMap.
+        - name: NODE_EXTRA_CA_CERTS
+          value: "/etc/ssl/authentik/ca.crt"
         volumeMounts:
         - name: data
           mountPath: /appdata
         - name: assets
           mountPath: /app/public/imgs
+        - name: authentik-ca
+          mountPath: /etc/ssl/authentik
+          readOnly: true
         resources:
           requests:
             memory: "512Mi"
@@ -72,3 +79,6 @@ spec:
       - name: assets
         persistentVolumeClaim:
           claimName: homarr-v1-assets-pvc
+      - name: authentik-ca
+        configMap:
+          name: authentik-ca
