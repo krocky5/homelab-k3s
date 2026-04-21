@@ -3,9 +3,11 @@
 kubeconfig
 *.kubeconfig
 
-# local secrets / overrides
+# local secrets / overrides — use SealedSecrets for anything going in git
 secret.yaml
 secret*.yaml
+*-secret.yaml
+*-secret.json
 *.env
 *.key
 *.pem
