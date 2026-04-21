@@ -4,9 +4,11 @@ kind: Kustomization
 namespace: windmill
 
 resources:
-  - secret.yaml
-  - windmill-oauth-secret.yaml
+  # windmill-db-secret is applied out-of-band (see services/windmill/secret.yaml,
+  # gitignored) since it predates sealed-secrets in this repo.
+  - windmill-oauth-sealed-secret.yaml
   - postgres.yaml
+  - authentik-ca-configmap.yaml
   - deployment.yaml
   - service.yaml
   - ingress.yaml

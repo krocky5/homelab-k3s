@@ -15,6 +15,21 @@ spec:
     spec:
       imagePullSecrets:
         - name: windmill-regcred
+      initContainers:
+        # Build a CA bundle = system CAs + Authentik self-signed CA, so OIDC
+        # token exchange to auth.krockysphere.com works without breaking
+        # outbound TLS to public hosts (GitHub, pip, npm, user scripts).
+        - name: ca-bundle
+          image: ghcr.io/windmill-labs/windmill:main
+          command: ["sh", "-c"]
+          args:
+            - cp /etc/ssl/certs/ca-certificates.crt /bundle/ca-bundle.crt && cat /authentik-ca/ca.crt >> /bundle/ca-bundle.crt
+          volumeMounts:
+            - name: authentik-ca
+              mountPath: /authentik-ca
+              readOnly: true
+            - name: ca-bundle
+              mountPath: /bundle
       containers:
         - name: windmill
           image: ghcr.io/windmill-labs/windmill:main
@@ -35,9 +50,15 @@ spec:
             # After applying windmill-oauth-config.yaml, users see "Login with Authentik" instead of password prompt.
             - name: OAUTH_JSON_PATH
               value: "/etc/windmill/oauth.json"
+            - name: SSL_CERT_FILE
+              value: /etc/ssl/certs/ca-bundle.crt
           volumeMounts:
             - name: oauth-config
               mountPath: /etc/windmill
+              readOnly: true
+            - name: ca-bundle
+              mountPath: /etc/ssl/certs/ca-bundle.crt
+              subPath: ca-bundle.crt
               readOnly: true
           ports:
             - containerPort: 8000
@@ -45,3 +66,8 @@ spec:
         - name: oauth-config
           secret:
             secretName: windmill-oauth-secret
+        - name: authentik-ca
+          configMap:
+            name: authentik-ca
+        - name: ca-bundle
+          emptyDir: {}
