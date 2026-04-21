@@ -26,7 +26,7 @@ grafana:
       client_id: "${GF_AUTH_GENERIC_OAUTH_CLIENT_ID}"
       client_secret: "${GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}"
       scopes: "openid profile email"
-      auth_url: "https://auth.krockysphere.com/application/o/grafana/authorize/"
+      auth_url: "https://auth.krockysphere.com/application/o/authorize/"
       token_url: "https://auth.krockysphere.com/application/o/token/"
       api_url: "https://auth.krockysphere.com/application/o/userinfo/"
       use_pkce: true
