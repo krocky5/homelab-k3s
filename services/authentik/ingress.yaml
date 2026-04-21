@@ -4,13 +4,13 @@ metadata:
   name: authentik
   namespace: authentik
   annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"  # Adjust if you use different issuer
+    cert-manager.io/cluster-issuer: letsencrypt-prod
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
   ingressClassName: traefik
   rules:
-  - host: auth.krockysphere.com  # CHANGE THIS to your domain
+  - host: auth.krockysphere.com
     http:
       paths:
       - path: /
@@ -22,5 +22,5 @@ spec:
               number: 9000
   tls:
   - hosts:
-    - auth.yourdomain.com  # CHANGE THIS to your domain
+    - auth.krockysphere.com
     secretName: authentik-tls

@@ -38,3 +38,4 @@ grafana:
       groups_attribute_path: groups
       auto_assign_org: true
       auto_assign_org_role: Viewer
+      tls_skip_verify_insecure: true

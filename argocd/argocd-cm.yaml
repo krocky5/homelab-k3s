@@ -18,7 +18,7 @@ data:
   oidc.config: |
     name: Authentik
     issuer: https://auth.krockysphere.com/application/o/argocd/
-    clientID: REPLACE_WITH_AUTHENTIK_CLIENT_ID
+    clientID: ARGOCD_CLIENT_ID
     clientSecret: $oidc.authentik.clientSecret
     requestedScopes:
       - openid
@@ -28,3 +28,4 @@ data:
     requestedIDTokenClaims:
       groups:
         essential: true
+    insecureSkipVerify: true
