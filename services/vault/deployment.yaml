@@ -44,6 +44,9 @@ spec:
           name: vault-config
         - mountPath: /vault/data
           name: vault-data
+        - mountPath: /vault/tls
+          name: authentik-ca
+          readOnly: true
         readinessProbe:
           httpGet:
             path: /v1/sys/health?standbyok=true&sealedcode=200&uninitcode=200
@@ -74,3 +77,6 @@ spec:
       - name: vault-data
         persistentVolumeClaim:
           claimName: vault-data
+      - name: authentik-ca
+        configMap:
+          name: authentik-ca
