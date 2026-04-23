@@ -1,0 +1,68 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: arc-runner-crucible
+  namespace: argocd
+  annotations:
+    # Waits for arc-controller + arc-secrets to be healthy first.
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  project: default
+  source:
+    chart: gha-runner-scale-set
+    repoURL: ghcr.io/actions/actions-runner-controller-charts
+    targetRevision: 0.10.1
+    helm:
+      releaseName: crucible-runners
+      values: |
+        # User-scoped runners — shared across krocky5/crucible, krocky5/crucible-ops,
+        # and any other repo where the PAT is installed.
+        githubConfigUrl: https://github.com/krocky5
+        githubConfigSecret: crucible-arc-pat    # must exist in this ns before sync
+        runnerScaleSetName: homelab-k3s
+
+        maxRunners: 3
+        minRunners: 0
+
+        containerMode:
+          type: kubernetes                      # rootless, no DinD
+
+        # Pod spec for runner pods
+        template:
+          spec:
+            automountServiceAccountToken: true
+            securityContext:
+              runAsNonRoot: true
+              runAsUser: 1001
+              fsGroup: 1001
+              seccompProfile:
+                type: RuntimeDefault
+            containers:
+              - name: runner
+                image: ghcr.io/actions/actions-runner:latest
+                command: ["/home/runner/run.sh"]
+                resources:
+                  requests:
+                    cpu: 200m
+                    memory: 512Mi
+                  limits:
+                    cpu: "2"
+                    memory: 4Gi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop: [ALL]
+
+        controllerServiceAccount:
+          namespace: arc-systems
+          name: arc-gha-rs-controller
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arc-runners
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
