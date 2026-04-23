@@ -15,25 +15,31 @@ spec:
       releaseName: crucible-runners
       values: |
         # Repo-scoped runner (ARC doesn't support user-account scope).
-        # crucible-ops uses GitHub-hosted runners for lint — cheap enough not
-        # to need a second scale set.
         githubConfigUrl: https://github.com/krocky5/crucible
-        githubConfigSecret: crucible-arc-pat   # must exist in arc-runners ns
+        githubConfigSecret: crucible-arc-pat
         runnerScaleSetName: homelab-k3s
 
         maxRunners: 3
         minRunners: 0
 
-        # Rootless kubernetes mode — no DinD, no privileged. ARC schedules a
-        # Job pod per workflow step using kubectl exec from the runner pod.
-        containerMode:
-          type: kubernetes
-          kubernetesModeWorkVolumeClaim:
-            accessModes: [ReadWriteOnce]
-            storageClassName: local-path
-            resources:
-              requests:
-                storage: 10Gi
+        # No containerMode — jobs run directly in the runner pod. The
+        # kubernetes containerMode forces ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER=true
+        # and demands a `container:` spec on every job, which our workflows
+        # don't use. Running jobs in the runner pod is fine — the pod is
+        # ephemeral and lives in an isolated namespace.
+        template:
+          spec:
+            restartPolicy: Never
+            containers:
+              - name: runner
+                image: ghcr.io/actions/actions-runner:latest
+                command: ["/home/runner/run.sh"]
+                volumeMounts:
+                  - name: work
+                    mountPath: /home/runner/_work
+            volumes:
+              - name: work
+                emptyDir: {}
 
         controllerServiceAccount:
           namespace: arc-systems

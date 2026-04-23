@@ -1,0 +1,32 @@
+# Lets the runner pod spawn buildkit pods in its own namespace when
+# `docker/setup-buildx-action` is used with `driver: kubernetes`.
+# Scoped to arc-runners only — no cluster-wide permissions.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: runner-buildx
+  namespace: arc-runners
+rules:
+  - apiGroups: [""]
+    resources: [pods, pods/log, secrets, configmaps, services]
+    verbs: [get, list, create, delete, watch, patch]
+  - apiGroups: [apps]
+    resources: [deployments, replicasets]
+    verbs: [get, list, create, delete, watch, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: runner-buildx
+  namespace: arc-runners
+subjects:
+  # ARC creates this SA automatically for the scale set when no containerMode is set.
+  # Name is derived from runnerScaleSetName, not releaseName.
+  - kind: ServiceAccount
+    name: homelab-k3s-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: Role
+  name: runner-buildx
+  apiGroup: rbac.authorization.k8s.io
