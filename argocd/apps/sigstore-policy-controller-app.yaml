@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sigstore-policy-controller
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: policy-controller
+    repoURL: https://sigstore.github.io/helm-charts
+    targetRevision: 0.10.2
+    helm:
+      releaseName: policy-controller
+      values: |
+        # Only inspects namespaces labelled policy.sigstore.dev/include: "true".
+        # ClusterImagePolicy manifests (one per workload) then decide warn vs enforce.
+        webhook:
+          failurePolicy: Ignore   # soft-fail while we bake; flip to Fail later
+          configData:
+            no-match-policy: allow
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cosign-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
