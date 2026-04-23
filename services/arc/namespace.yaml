@@ -3,7 +3,14 @@ kind: Namespace
 metadata:
   name: arc-runners
   labels:
-    pod-security.kubernetes.io/enforce: restricted
+    # Baseline enforce: blocks privileged, host namespaces, hostPath, host
+    # ports, SYS_ADMIN-class caps. The stock ARC runner image plus the
+    # hook-spawned job pods don't satisfy 'restricted' (runner pod doesn't
+    # set allowPrivilegeEscalation/caps/runAsNonRoot/seccompProfile; hook
+    # pods inherit whatever the workflow step asks for). Blast radius is
+    # bounded by NetworkPolicy isolation + dedicated namespace + scoped PAT.
+    pod-security.kubernetes.io/enforce: baseline
     pod-security.kubernetes.io/enforce-version: latest
+    # Still see what restricted would block, via audit/warn:
     pod-security.kubernetes.io/audit: restricted
     pod-security.kubernetes.io/warn: restricted
