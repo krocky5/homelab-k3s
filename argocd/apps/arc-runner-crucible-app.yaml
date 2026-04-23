@@ -4,7 +4,6 @@ metadata:
   name: arc-runner-crucible
   namespace: argocd
   annotations:
-    # Waits for arc-controller + arc-secrets to be healthy first.
     argocd.argoproj.io/sync-wave: "10"
 spec:
   project: default
@@ -15,43 +14,26 @@ spec:
     helm:
       releaseName: crucible-runners
       values: |
-        # User-scoped runners — shared across krocky5/crucible, krocky5/crucible-ops,
-        # and any other repo where the PAT is installed.
-        githubConfigUrl: https://github.com/krocky5
-        githubConfigSecret: crucible-arc-pat    # must exist in this ns before sync
+        # Repo-scoped runner (ARC doesn't support user-account scope).
+        # crucible-ops uses GitHub-hosted runners for lint — cheap enough not
+        # to need a second scale set.
+        githubConfigUrl: https://github.com/krocky5/crucible
+        githubConfigSecret: crucible-arc-pat   # must exist in arc-runners ns
         runnerScaleSetName: homelab-k3s
 
         maxRunners: 3
         minRunners: 0
 
+        # Rootless kubernetes mode — no DinD, no privileged. ARC schedules a
+        # Job pod per workflow step using kubectl exec from the runner pod.
         containerMode:
-          type: kubernetes                      # rootless, no DinD
-
-        # Pod spec for runner pods
-        template:
-          spec:
-            automountServiceAccountToken: true
-            securityContext:
-              runAsNonRoot: true
-              runAsUser: 1001
-              fsGroup: 1001
-              seccompProfile:
-                type: RuntimeDefault
-            containers:
-              - name: runner
-                image: ghcr.io/actions/actions-runner:latest
-                command: ["/home/runner/run.sh"]
-                resources:
-                  requests:
-                    cpu: 200m
-                    memory: 512Mi
-                  limits:
-                    cpu: "2"
-                    memory: 4Gi
-                securityContext:
-                  allowPrivilegeEscalation: false
-                  capabilities:
-                    drop: [ALL]
+          type: kubernetes
+          kubernetesModeWorkVolumeClaim:
+            accessModes: [ReadWriteOnce]
+            storageClassName: local-path
+            resources:
+              requests:
+                storage: 10Gi
 
         controllerServiceAccount:
           namespace: arc-systems
