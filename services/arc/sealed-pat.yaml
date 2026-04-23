@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: crucible-arc-pat
+  namespace: arc-runners
+spec:
+  encryptedData:
+    github_token: AgALu/Cm1SpDlOKfMAeAdm847VZ+LTGy0l/BBk9pCyliGPHIsCU4mJfHura+zphk6vw7VCzmVx4RNLVEx5d3DdfnbF6uqMaqTkpfIYIaQ6Xaizrs0n1DYfckjQhgrC8/fh76kP+UT9F++WQTWhzW4kMTu4OTUYNg7D9NzKDmV0lNySq7ktsR3WlW2FOXGretXWGn7yVgcp/iI8cvwY3LlCP+dT6+pP05rsOZrorpJDcPNtjaoNc563EvT1DZcu6yRZadUQaL2j4YMJxK0X5A7uPxxa+zDZFKrd+e63JepyBpdkYqY+HzqtAje4Ll6Xyznj0uhVmEwncTN45kcUkyNXrJdhH5ogl5qjPILdWpXU99zXTOEMaABQu4LBUCYjwNfWQXLsslyrK0ICDPekeRjnLWaSGMXLoPzAoOn4qAyqKjjD+sGvrQCKl0Tg2U31jgSeluFEKtGjQ5/0RSAUV4/8Pj/TA8cn0G1ufvz3UMNrQHHe2NzMeCWonZ6DNf/UzqLqu6w55eawtQ50gDGuUTgIhl9bSSCaYC/TMnA1I6qH+FxV5Yox1JVNZIIKCeBBb++IVfxHMe20iyqs3wCiuYj6LD7QwpHtl9yRQNOqZDb1jqyznorbCxytOEe0dm1ku552NguHDMdQAi+ncWgZb5e3fVZKQ/S9wBcyk/a/NjFHOoX6QlzVz79vcug3npMaJMHk83fVUckO9g6n+3qzej2Cu0EPQ3ChJLHJsC0p++ujXxQCTJ+tcmy1hhZDW2h0REKk5E3tY7E8emUF/DOeFfCW8A53gAisSeAPL2wsmn0tvmQEwmUTYvx77rDzgHfk4=
+  template:
+    metadata:
+      name: crucible-arc-pat
+      namespace: arc-runners

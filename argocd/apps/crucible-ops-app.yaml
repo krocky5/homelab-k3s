@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: crucible-ops-root
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "20"
+spec:
+  project: default
+  # App-of-apps: pulls the per-env Applications out of crucible-ops/argocd/
+  # and lets Argo CD manage them as a fleet.
+  source:
+    repoURL: https://github.com/krocky5/crucible-ops.git
+    targetRevision: main
+    path: argocd
+    directory:
+      recurse: false
+      include: "{project.yaml,crucible-dev.yaml,crucible-prod.yaml}"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
